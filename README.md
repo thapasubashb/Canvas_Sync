@@ -9,50 +9,58 @@
 
 ```mermaid
 flowchart TD
-    %% Define Client Layer
+    %% Define Custom Styles
+    classDef ui fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a,rx:6px
+    classDef crdt fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#581c87,rx:6px
+    classDef net fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d,rx:6px
+    classDef server fill:#f8fafc,stroke:#475569,stroke-width:2px,color:#0f172a,rx:6px
+    classDef db fill:#fffbeb,stroke:#f59e0b,stroke-width:2px,color:#78350f,rx:6px
+
+    %% CLIENT SECTION
     subgraph Client ["🌐 Client (Browser)"]
+        direction LR
         
-        subgraph UI ["⚛️ React Application"]
-            Editor["📝 SimpleEditor<br/>(Text)"]
-            Whiteboard["🎨 Whiteboard<br/>(Fabric.js)"]
+        subgraph UI ["⚛️ React UI"]
+            direction TB
+            Editor["📝 Text Editor"]:::ui
+            Whiteboard["🎨 Whiteboard"]:::ui
         end
 
         subgraph CRDT ["⚙️ CRDT Engine"]
-            direction LR
-            RGA["RGA (Text)"]
-            Shape["ShapeCRDT"]
-            Lamport["Lamport Clock"]
-            OpQueue["Operation Queue"]
+            direction TB
+            RGA["RGA (Text)"]:::crdt
+            Shape["ShapeCRDT"]:::crdt
+            Clock["Lamport Clock"]:::crdt
+            OpQ["Operation Queue"]:::crdt
         end
 
-        subgraph WSClient ["🔌 WebSocket Service"]
-            CodecClient["Binary Encoder/Decoder"]
-            IndexedDB[("Offline Storage<br/>(IndexedDB)")]
+        subgraph ClientNet ["🔌 Networking & Storage"]
+            direction TB
+            CodecC["Binary Codec"]:::net
+            IDB[("IndexedDB<br/>(Offline Storage)")]:::db
         end
 
-        UI --> CRDT
-        CRDT --> WSClient
+        UI --> CRDT --> ClientNet
     end
 
-    %% Define Server Layer
+    %% SERVER SECTION
     subgraph Server ["🖥️ Server (Node.js)"]
+        direction LR
         
-        subgraph ExpressWS ["⚙️ Express + WebSocket Server"]
-            direction LR
-            RoomMgr["Room Manager"]
-            CodecServer["Binary Decoder"]
-            Broadcast["Broadcast to<br/>Room Members"]
+        subgraph ServerNet ["⚙️ Express + WebSocket"]
+            direction TB
+            RoomMgr["Room Manager"]:::server
+            CodecS["Binary Decoder"]:::net
+            Bcast["Broadcaster"]:::server
         end
 
-        subgraph DB ["🗄️ Database (Prisma)"]
-            SQLite[("SQLite<br/>──────────<br/>• Documents<br/>• Operations")]
-        end
-
-        ExpressWS --> DB
+        DB[("SQLite (Prisma)<br/>──────────<br/>• Documents<br/>• Operations")]:::db
+        
+        ServerNet --> DB
     end
 
-    %% Network Connection (Fixed for GitHub Parser)
-    WSClient <-->|"WebSocket (Binary)"| ExpressWS
+    %% NETWORK CONNECTION
+    ClientNet <==>|"WebSocket (Binary)"| ServerNet
 ```
 
 
