@@ -4,6 +4,59 @@
 
 ---
 
+## Collaborative Editor Architecture
+
+```mermaid
+flowchart TD
+    %% Define Client Layer
+    subgraph Client ["🌐 Client (Browser)"]
+        
+        subgraph UI ["⚛️ React Application"]
+            Editor["📝 SimpleEditor<br/>(Text)"]
+            Whiteboard["🎨 Whiteboard<br/>(Fabric.js)"]
+        end
+
+        subgraph CRDT ["⚙️ CRDT Engine"]
+            direction LR
+            RGA["RGA (Text)"]
+            Shape["ShapeCRDT"]
+            Lamport["Lamport Clock"]
+            OpQueue["Operation Queue"]
+        end
+
+        subgraph WSClient ["🔌 WebSocket Service"]
+            CodecClient["Binary Encoder/Decoder"]
+            IndexedDB[("Offline Storage<br/>(IndexedDB)")]
+        end
+
+        UI --> CRDT
+        CRDT --> WSClient
+    end
+
+    %% Define Server Layer
+    subgraph Server ["🖥️ Server (Node.js)"]
+        
+        subgraph ExpressWS ["⚙️ Express + WebSocket Server"]
+            direction LR
+            RoomMgr["Room Manager"]
+            CodecServer["Binary Decoder"]
+            Broadcast["Broadcast to<br/>Room Members"]
+        end
+
+        subgraph DB ["🗄️ Database (Prisma)"]
+            SQLite[("SQLite<br/>──────────<br/>• Documents<br/>• Operations")]
+        end
+
+        ExpressWS --> DB
+    end
+
+    %% Network Connection
+    WSClient <-->|WebSocket (Binary)| ExpressWS
+```
+
+
+
+
 ## 🚀 What is this?
 
 Canvas_Sync is a **real-time collaborative editor** where multiple people can edit the same document and draw shapes together – all synced instantly.
