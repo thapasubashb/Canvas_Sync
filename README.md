@@ -9,58 +9,49 @@
 
 ```mermaid
 flowchart TD
-    %% Define Custom Styles
-    classDef ui fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a,rx:6px
-    classDef crdt fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#581c87,rx:6px
-    classDef net fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d,rx:6px
-    classDef server fill:#f8fafc,stroke:#475569,stroke-width:2px,color:#0f172a,rx:6px
-    classDef db fill:#fffbeb,stroke:#f59e0b,stroke-width:2px,color:#78350f,rx:6px
+    %% 1. Define Modern, Corporate Styles
+    classDef boundary fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px,rx:12px,color:#0f172a,font-weight:bold
+    classDef ui fill:#ffffff,stroke:#3b82f6,stroke-width:2px,rx:8px,color:#1e3a8a
+    classDef core fill:#eff6ff,stroke:#6366f1,stroke-width:2px,rx:8px,color:#312e81
+    classDef network fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,rx:8px,color:#14532d
+    classDef storage fill:#fffbeb,stroke:#f59e0b,stroke-width:2px,rx:8px,color:#78350f
 
-    %% CLIENT SECTION
-    subgraph Client ["🌐 Client (Browser)"]
+    %% 2. Client Architecture
+    subgraph Client ["🌐 Client Application (Browser)"]
         direction LR
         
-        subgraph UI ["⚛️ React UI"]
-            direction TB
-            Editor["📝 Text Editor"]:::ui
-            Whiteboard["🎨 Whiteboard"]:::ui
-        end
-
-        subgraph CRDT ["⚙️ CRDT Engine"]
-            direction TB
-            RGA["RGA (Text)"]:::crdt
-            Shape["ShapeCRDT"]:::crdt
-            Clock["Lamport Clock"]:::crdt
-            OpQ["Operation Queue"]:::crdt
-        end
-
-        subgraph ClientNet ["🔌 Networking & Storage"]
-            direction TB
-            CodecC["Binary Codec"]:::net
-            IDB[("IndexedDB<br/>(Offline Storage)")]:::db
-        end
-
-        UI --> CRDT --> ClientNet
+        UI["📱 User Interface<br/><span style='font-size:13px;font-weight:normal;color:#475569'>React • Text Editor • Whiteboard</span>"]:::ui
+        
+        CRDT["⚙️ CRDT Engine<br/><span style='font-size:13px;font-weight:normal;color:#475569'>RGA • ShapeCRDT • Lamport Clocks</span>"]:::core
+        
+        Sync["🔌 Sync Manager<br/><span style='font-size:13px;font-weight:normal;color:#475569'>WS Client • Binary Codec</span>"]:::network
+        
+        IDB[("💽 Offline Cache<br/><span style='font-size:13px;font-weight:normal;color:#475569'>IndexedDB</span>")]:::storage
+        
+        UI <-->|User Actions| CRDT
+        CRDT <-->|Local State| IDB
+        CRDT <-->|Encode/Decode| Sync
     end
 
-    %% SERVER SECTION
-    subgraph Server ["🖥️ Server (Node.js)"]
+    %% 3. Server Architecture
+    subgraph Server ["🖥️ Backend Infrastructure (Node.js)"]
         direction LR
         
-        subgraph ServerNet ["⚙️ Express + WebSocket"]
-            direction TB
-            RoomMgr["Room Manager"]:::server
-            CodecS["Binary Decoder"]:::net
-            Bcast["Broadcaster"]:::server
-        end
-
-        DB[("SQLite (Prisma)<br/>──────────<br/>• Documents<br/>• Operations")]:::db
+        Gateway["📡 WebSocket Gateway<br/><span style='font-size:13px;font-weight:normal;color:#475569'>Express • Binary Decoder</span>"]:::network
         
-        ServerNet --> DB
+        Rooms["👥 Room Manager<br/><span style='font-size:13px;font-weight:normal;color:#475569'>State Validation • Broadcasting</span>"]:::core
+        
+        DB[("🗄️ Persistence Layer<br/><span style='font-size:13px;font-weight:normal;color:#475569'>Prisma • SQLite (Docs/Ops)</span>")]:::storage
+        
+        Gateway <-->|Parsed Ops| Rooms
+        Rooms <-->|Save/Load| DB
     end
 
-    %% NETWORK CONNECTION
-    ClientNet <==>|"WebSocket (Binary)"| ServerNet
+    %% 4. Network Link
+    Sync <==>|"wss:// (Binary Payloads)"| Gateway
+    
+    %% Apply bounding box style
+    class Client,Server boundary
 ```
 
 
