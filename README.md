@@ -4,6 +4,7 @@
 
 ---
 
+
 ## Collaborative Editor Architecture
 
 ```mermaid
@@ -50,11 +51,9 @@ flowchart TD
         ExpressWS --> DB
     end
 
-    %% Network Connection
-    WSClient <-->|WebSocket (Binary)| ExpressWS
+    %% Network Connection (Fixed for GitHub Parser)
+    WSClient <-->|"WebSocket (Binary)"| ExpressWS
 ```
-
-
 
 
 ## 🚀 What is this?
