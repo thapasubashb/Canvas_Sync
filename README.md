@@ -8,50 +8,43 @@
 ## Collaborative Editor Architecture
 
 ```mermaid
-flowchart TD
-    %% 1. Define Modern, Corporate Styles
-    classDef boundary fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px,rx:12px,color:#0f172a,font-weight:bold
-    classDef ui fill:#ffffff,stroke:#3b82f6,stroke-width:2px,rx:8px,color:#1e3a8a
-    classDef core fill:#eff6ff,stroke:#6366f1,stroke-width:2px,rx:8px,color:#312e81
-    classDef network fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,rx:8px,color:#14532d
-    classDef storage fill:#fffbeb,stroke:#f59e0b,stroke-width:2px,rx:8px,color:#78350f
+flowchart LR
+    %% n8n-style Theme Configuration
+    classDef trigger fill:#10b981,stroke:#059669,stroke-width:2px,color:#ffffff,rx:30px,font-weight:bold
+    classDef logic fill:#ffffff,stroke:#cbd5e1,stroke-width:2px,color:#334155,rx:8px,font-weight:bold
+    classDef network fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:#ffffff,rx:8px,font-weight:bold
+    classDef database fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#ffffff,rx:8px,font-weight:bold
 
-    %% 2. Client Architecture
-    subgraph Client ["🌐 Client Application (Browser)"]
-        direction LR
-        
-        UI["📱 User Interface<br/><span style='font-size:13px;font-weight:normal;color:#475569'>React • Text Editor • Whiteboard</span>"]:::ui
-        
-        CRDT["⚙️ CRDT Engine<br/><span style='font-size:13px;font-weight:normal;color:#475569'>RGA • ShapeCRDT • Lamport Clocks</span>"]:::core
-        
-        Sync["🔌 Sync Manager<br/><span style='font-size:13px;font-weight:normal;color:#475569'>WS Client • Binary Codec</span>"]:::network
-        
-        IDB[("💽 Offline Cache<br/><span style='font-size:13px;font-weight:normal;color:#475569'>IndexedDB</span>")]:::storage
-        
-        UI <-->|User Actions| CRDT
-        CRDT <-->|Local State| IDB
-        CRDT <-->|Encode/Decode| Sync
-    end
-
-    %% 3. Server Architecture
-    subgraph Server ["🖥️ Backend Infrastructure (Node.js)"]
-        direction LR
-        
-        Gateway["📡 WebSocket Gateway<br/><span style='font-size:13px;font-weight:normal;color:#475569'>Express • Binary Decoder</span>"]:::network
-        
-        Rooms["👥 Room Manager<br/><span style='font-size:13px;font-weight:normal;color:#475569'>State Validation • Broadcasting</span>"]:::core
-        
-        DB[("🗄️ Persistence Layer<br/><span style='font-size:13px;font-weight:normal;color:#475569'>Prisma • SQLite (Docs/Ops)</span>")]:::storage
-        
-        Gateway <-->|Parsed Ops| Rooms
-        Rooms <-->|Save/Load| DB
-    end
-
-    %% 4. Network Link
-    Sync <==>|"wss:// (Binary Payloads)"| Gateway
+    %% 1. Nodes definition
+    UI(["▶ React UI<br/><span style='font-size:12px;font-weight:normal'>SimpleEditor & Fabric.js</span>"]):::trigger
     
-    %% Apply bounding box style
-    class Client,Server boundary
+    CRDT["⚙️ CRDT Engine<br/><span style='font-size:12px;font-weight:normal'>RGA • Shapes • Lamport</span>"]:::logic
+    
+    IDB[("💽 IndexedDB<br/><span style='font-size:12px;font-weight:normal'>Offline Cache</span>")]:::database
+    
+    ClientWS["🔌 Client Codec<br/><span style='font-size:12px;font-weight:normal'>Binary Encoder</span>"]:::network
+    
+    ServerWS["📡 Express WS<br/><span style='font-size:12px;font-weight:normal'>Binary Decoder</span>"]:::network
+    
+    Rooms["👥 Room Manager<br/><span style='font-size:12px;font-weight:normal'>Validate & Broadcast</span>"]:::logic
+    
+    DB[("🗄️ Prisma<br/><span style='font-size:12px;font-weight:normal'>SQLite</span>")]:::database
+
+    %% 2. The Linear n8n-style Flow
+    UI -->|"User Edit"| CRDT
+    
+    %% Split the flow cleanly
+    CRDT -.-|"Save Local"| IDB
+    CRDT -->|"Queue Op"| ClientWS
+    
+    %% The main network bridge
+    ClientWS ===|"wss:// (Binary)"| ServerWS
+    
+    %% Server processing
+    ServerWS -->|"Parsed Op"| Rooms
+    
+    Rooms -->|"Persist"| DB
+    Rooms -.->|"Broadcast"| ServerWS
 ```
 
 
